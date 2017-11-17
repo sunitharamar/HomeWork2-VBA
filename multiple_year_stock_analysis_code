@@ -1,0 +1,241 @@
+Sub Mutiple_year_stock_analysis():
+
+For Each ws In Worksheets
+
+' Activating the current worksheet
+   ws.Activate
+
+   ' Grabbed the WorksheetName
+        WorksheetName = ws.Name
+    
+        MsgBox WorksheetName
+'----------------------------------------------------------------------------------------------------------------
+' Wall Street Stock Analysis
+
+'Hard
+
+'1) Create a script that will loop through all the stocks and take the following info.
+'    a)  Yearly change from what the stock opened the year at to what the closing price was.
+'    b)  The percent change from the what it opened the year at to what it closed.
+'    c)  The total Volume of the stock
+'    d)  Ticker symbol
+'    e)  Conditional formatting in VBA that will highlight positive change in green and negative change in red.
+'    f)  Also able to locate the stock with the "Greatest % increase", "Greatest % Decrease" and "Greatest total volume".
+ 
+'-----------------------------------------------------------------------------------------------------------------
+
+'--------------------------------
+ 'Inserting headers via Ranges
+ '-------------------------------
+  ws.Range("I1").Value = "Ticker"
+  ws.Range("J1").Value = "Yearly Change"
+  ws.Range("K1").Value = "Percent Change"
+  ws.Range("L1").Value = "Total Stock Volume"
+  ws.Range("O2").Value = "Greatest % Increase"
+  ws.Range("O3").Value = "Greatest % Decrease"
+  ws.Range("O4").Value = "GreatestTotal Volume"
+  ws.Range("P1").Value = "Ticker"
+  ws.Range("Q1").Value = "Value"
+  
+
+
+Dim rowcount, pcount As Long
+rowcount = 0
+ 
+
+  ' Set an initial variable for holding the ticker name, year and temp location for year
+  Dim ticker_name, min_tick, max_tick, max_vol_tick As String
+  
+  ' Set an initial variable for holding the total per ticker
+  Dim ticker_total, ticker_yearly_change, ticker_percent_change, yearly_open, yearly_close  As Double
+  ticker_total = 0
+  ticker_yearly_change = 0
+  ticker_percent_change = 0
+  yearly_open = 0
+  yearly_close = 0
+ 
+  
+  ' Keep track of the location for each ticker information in the summary table
+  Dim Summary_Row  As Integer
+  Summary_Row = 2
+  
+  'Keeping track of the stock open value
+  Dim Flag As Boolean
+  
+  
+  'keep track of the global variables for Greatest increase, decrease and volume
+  Dim min, max, max_vol As Double
+ 
+  
+  '-----------------------------
+  ' Loop through all ticker rows
+  '-----------------------------
+  
+  rowcount = rowcount + ws.Cells(Rows.Count, "A").End(xlUp).Row
+  
+  
+  For i = 2 To rowcount
+    
+    ' Check if we are not in the same ticker
+      If (ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value) Then
+      
+ 
+     '--------------------------------------------
+      'Collect ticker name, and year from the date <B2>
+      '-------------------------------------------
+            
+      ' Set the ticker name
+      ticker_name = ws.Cells(i, 1).Value
+ 
+         
+   '----------------------------------------------------------
+   ' Calculating all the values before printing out to the summary table
+   '----------------------------------------------------------
+      
+      ' Add to the ticker total
+      ticker_total = ticker_total + ws.Cells(i, 7).Value
+               
+               
+      '------------
+       'Yearly close
+       '------------
+        yearly_close = ws.Cells(i, 6).Value
+       
+   
+       '------------------------------
+       '  Yearly change calculating
+       '-------------------------------
+   
+        ticker_yearly_change = yearly_close - yearly_open
+         
+      
+      '----------------------------------------------
+       '  Printing all the analysis to the Summary table
+       '----------------------------------------------
+      
+       ' Print the ticker_names in the Summary Table
+        ws.Range("I" & Summary_Row).Value = ticker_name
+      
+       ' Print the ticker total to the Summary Table
+        ws.Range("L" & Summary_Row).Value = ticker_total
+      
+       'Print the ticker yearly change to the summary table
+        ws.Range("J" & Summary_Row).Value = ticker_yearly_change
+        
+        
+         '---------------------------------------------------
+         'Coloring the postive value cell to green and negative to red
+         '---------------------------------------------------
+               
+                If (ticker_yearly_change > 0) Then
+                     'Color the positive value green
+                     ws.Range("J" & Summary_Row).Interior.ColorIndex = 4
+              
+                Else
+                   ' Color the negative value red
+                     ws.Range("J" & Summary_Row).Interior.ColorIndex = 3
+         
+                End If
+                
+                
+         '-----------------------------------------------------
+         'Print the ticker percent change to the summary table
+        '-----------------------------------------------------
+            If (ticker_yearly_change <> 0) Then
+               ticker_percent_change = FormatPercent((ticker_percent_change + (yearly_close - yearly_open) / yearly_open))
+            Else
+                 ticker_percent_change = 0   ' the stock mark is closed today
+            End If
+            
+            ws.Range("K" & Summary_Row).Value = ticker_percent_change
+   
+            
+'---------------------------------------------------------------------------------------
+
+      
+      ' Add one to the summary table row
+      Summary_Row = Summary_Row + 1
+      
+      ' Reset the ticker total for each different symbol
+        ticker_total = 0
+        ticker_yearly_change = 0
+        ticker_percent_change = 0
+        yearly_open = 0
+        yearly_close = 0
+        Flag = False
+      
+    ' If the cell immediately following a row is the same ticker...
+    Else
+       
+      ' Add to the ticker total for same ticker
+      ticker_total = ticker_total + ws.Cells(i, 7).Value
+
+         
+        '------------
+       'Yearly open
+       '------------
+       
+        If (Flag = False) And (ws.Cells(i, 3).Value <> 0) Then
+             yearly_open = ws.Cells(i, 3).Value
+             Flag = True
+        End If
+      
+    End If   ' looping  ended for All stock rows
+ 
+  
+    
+  Next i ' this is the for loop for all ticker column
+  
+  '--------------------------------------------------------------------------------
+ 'Looping through the Percentage column to get the Greatest increase, decrease and volume
+ '---------------------------------------------------------------------------------
+  pcount = 0
+  min = 0
+  max = 0
+  max_vol = 0
+ 
+ 
+  pcount = pcount + ws.Cells(Rows.Count, "K").End(xlUp).Row
+ 
+        
+        For j = 2 To pcount
+        
+             ' Check for min
+                 If (ws.Cells(j, 11).Value < min) Then
+                         min = (ws.Cells(j, 11).Value)
+                         min_tick = (ws.Cells(j, 9).Value)
+                         
+                         ' Check for max
+                   ElseIf (ws.Cells(j, 11).Value > max) Then
+                             max = (ws.Cells(j, 11).Value)
+                             max_tick = (ws.Cells(j, 9).Value)
+                    End If
+                         
+                           ' Check for max_vol
+                                 If (ws.Cells(j, 12).Value > max_vol) Then
+                                    max_vol = (ws.Cells(j, 12).Value)
+                                    max_vol_tick = (ws.Cells(j, 9).Value)
+                                
+                                End If
+                                
+                 
+          Next j ' loop ending for percentage change
+          
+          
+          
+  
+'-----------------------------------------------
+  'Print the Greatest Values to the Summary Table
+ '-----------------------------------------------
+       'Print the ticker yearly change to the summary table
+        ws.Range("P" & 2).Value = max_tick
+        ws.Range("Q" & 2).Value = FormatPercent(max)
+        ws.Range("P" & 3).Value = min_tick
+        ws.Range("Q" & 3).Value = FormatPercent(min)
+        ws.Range("P" & 4).Value = max_vol_tick
+        ws.Range("Q" & 4).Value = max_vol
+        
+   Next ws ' looping through all worksheets
+  
+End Sub
+
